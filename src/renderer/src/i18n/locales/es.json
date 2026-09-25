@@ -14735,6 +14735,11 @@
   },
   "components": {
     "native-chat": {
+      "contextMenu": {
+        "orchestrationAddressCopied": "Dirección de orquestación copiada",
+        "orchestrationAddressCopyFailed": "No se pudo copiar la dirección de orquestación",
+        "copyOrchestrationAddress": "Copiar dirección de orquestación"
+      },
       "composer": {
         "imageUnsupported": "Este agente no admite pegar imágenes.",
         "send": "Enviar",
@@ -14848,12 +14853,7 @@
         "allow": "Permitir",
         "deny": "Denegar"
       },
-      "launchPromptNotDelivered": "No entregado — revisa la terminal",
-      "contextMenu": {
-        "orchestrationAddressCopied": "Dirección de orquestación copiada",
-        "orchestrationAddressCopyFailed": "No se pudo copiar la dirección de orquestación",
-        "copyOrchestrationAddress": "Copiar dirección de orquestación"
-      }
+      "launchPromptNotDelivered": "No entregado — revisa la terminal"
     },
     "tab": {
       "bar": {
