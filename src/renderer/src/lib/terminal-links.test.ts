@@ -144,6 +144,25 @@ describe('terminal path helpers', () => {
       ).toEqual(['/tmp/中黒・テスト/a.txt'])
     })
 
+    it('keeps CJK name punctuation in a relative first directory', () => {
+      expect(
+        extractTerminalFileLinks('会社・事業/file.txt').map((link) => link.displayText)
+      ).toEqual(['会社・事業/file.txt'])
+    })
+
+    it('stops a path at a Japanese range wave dash', () => {
+      expect(
+        extractTerminalFileLinks('ログ: /var/log/app.log〜古いものは削除').map(
+          (link) => link.pathText
+        )
+      ).toEqual(['/var/log/app.log'])
+      expect(
+        extractTerminalFileLinks('ログ: /var/log/app.log～古いものは削除').map(
+          (link) => link.pathText
+        )
+      ).toEqual(['/var/log/app.log'])
+    })
+
     it('detects tilde-prefixed POSIX paths', () => {
       const links = extractTerminalFileLinks('~/Documents/Path/file_name')
       expect(links).toHaveLength(1)
