@@ -150,6 +150,15 @@ describe('terminal path helpers', () => {
       ).toEqual(['会社・事業/file.txt'])
     })
 
+    it('does not start a relative path at a bullet middle dot', () => {
+      expect(extractTerminalFileLinks('・/tmp/foo.txt').map((link) => link.pathText)).toEqual([
+        '/tmp/foo.txt'
+      ])
+      expect(extractTerminalFileLinks('･/tmp/foo.txt').map((link) => link.pathText)).toEqual([
+        '/tmp/foo.txt'
+      ])
+    })
+
     it('stops a path at a Japanese range wave dash', () => {
       expect(
         extractTerminalFileLinks('ログ: /var/log/app.log〜古いものは削除').map(

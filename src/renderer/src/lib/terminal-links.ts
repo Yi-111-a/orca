@@ -40,8 +40,10 @@ export type ResolvedTerminalFileLink = Pick<ParsedTerminalFileLink, 'line' | 'co
 // a path.
 // Not the wave dashes \u301C/\uFF5E either: Japanese prose uses them for
 // ranges (`a.txt〜b.txt`), so next to a path they read as a delimiter.
+// A relative segment must still start with a name character, so a bullet such
+// as `・/tmp/foo.txt` links the absolute path rather than absorbing the dot.
 const LOCAL_PATH_REGEX =
-  /(?:~[\\/]|[\\/]|\.{1,2}[\\/]|[A-Za-z]:[\\/]|[\p{L}\p{N}\p{M}._\-\u30FB\uFF65]+[\\/])[\p{L}\p{N}\p{M}._~\-/%+@\\()[\]\u30FB\uFF65]*(?::\d+)?(?::\d+)?/gu
+  /(?:~[\\/]|[\\/]|\.{1,2}[\\/]|[A-Za-z]:[\\/]|[\p{L}\p{N}\p{M}._-][\p{L}\p{N}\p{M}._\-\u30FB\uFF65]*[\\/])[\p{L}\p{N}\p{M}._~\-/%+@\\()[\]\u30FB\uFF65]*(?::\d+)?(?::\d+)?/gu
 
 // Matches separator paths whose file or folder names include spaces. This runs
 // before LOCAL_PATH_REGEX so `/Users/A/Foo Bar/file.ts` is claimed as one link
