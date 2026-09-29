@@ -40,6 +40,8 @@ export type ResolvedTerminalFileLink = Pick<ParsedTerminalFileLink, 'line' | 'co
 // a path.
 // Not the wave dashes \u301C/\uFF5E either: Japanese prose uses them for
 // ranges (`a.txt〜b.txt`), so next to a path they read as a delimiter.
+// #23322 added those dashes to the continuation class. They stay out: a path
+// followed by `〜古いものは削除` must stop at the file name.
 // A relative segment must still start with a name character, so a bullet such
 // as `・/tmp/foo.txt` links the absolute path rather than absorbing the dot.
 const LOCAL_PATH_REGEX =
