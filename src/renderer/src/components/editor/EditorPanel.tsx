@@ -25,13 +25,14 @@ import {
 import { createEditorPanelDraftSelector } from './editor-panel-draft-selector'
 import { createCurrentMarkdownArtifactRequest } from './markdown-artifact-upload'
 import { useEditorPanelSave } from './useEditorPanelSave'
+import { resolveMarkdownReviewNotesEnabled } from './markdown-review-notes-visibility'
 
 function EditorPanelInner({
   activeFileId: activeFileIdProp,
   activeViewStateId: activeViewStateIdProp,
   isVisible = true,
   isCmdSaveOwner = isVisible,
-  markdownAnnotationsEnabled = true
+  markdownAnnotationsEnabled
 }: {
   activeFileId?: string | null
   activeViewStateId?: string | null
@@ -80,6 +81,9 @@ function EditorPanelInner({
   )
   const editorDrafts = useAppStore(editorDraftSelector)
   const settings = useAppStore((s) => s.settings)
+  // Why: the "Markdown Review Notes" setting is the user's only control over these notes, and
+  // nothing read it. An explicit prop still wins so a surface can suppress them regardless.
+  const reviewNotesEnabled = resolveMarkdownReviewNotesEnabled(settings, markdownAnnotationsEnabled)
   const panelRef = useRef<HTMLDivElement>(null)
   const [copiedPathToast, setCopiedPathToast] = useState<{ fileId: string; token: number } | null>(
     null
@@ -384,7 +388,7 @@ function EditorPanelInner({
         }
         onCloseRenameDialog={closeRenameDialog}
         onRenameConfirm={handleRenameConfirm}
-        markdownAnnotationsEnabled={markdownAnnotationsEnabled}
+        markdownAnnotationsEnabled={reviewNotesEnabled}
       />
     </DiffNavigationProvider>
   )
