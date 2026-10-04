@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   createWebAppManifestIconsPlugin,
@@ -12,7 +14,7 @@ const MANIFEST_ICONS: WebManifestIcon[] = [
   { src: './web-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
 ]
 
-const MANIFEST_SOURCE = { name: 'Orca', start_url: './', icons: MANIFEST_ICONS }
+const MANIFEST_SOURCE = { name: 'Orca', start_url: '../', icons: MANIFEST_ICONS }
 
 const EMITTED = [
   'assets/web-app-manifest-Qq4w5.webmanifest',
@@ -120,5 +122,38 @@ describe('createWebAppManifestIconsPlugin', () => {
     expect(plugin.name).toBe('web-app-manifest-icons')
     expect(typeof plugin.generateBundle).toBe('function')
     expect('transformIndexHtml' in plugin).toBe(false)
+  })
+})
+
+describe('the shipped manifest', () => {
+  const manifestPath = resolve('src/renderer/web-app-manifest.webmanifest')
+  // Vite emits the manifest into the default assets dir, so these URLs resolve
+  // against /assets/ rather than the linking page -- which is what makes './'
+  // launch the assets directory instead of the client.
+  const servedAt = 'http://127.0.0.1/assets/web-app-manifest-Qq4w5.webmanifest'
+
+  function shipped(): { id: string; start_url: string; scope: string } {
+    return JSON.parse(readFileSync(manifestPath, 'utf8'))
+  }
+
+  it('resolves id, start_url and scope to the web client entry', () => {
+    const { id, start_url, scope } = shipped()
+
+    expect(new URL(id, servedAt).pathname).toBe('/')
+    expect(new URL(start_url, servedAt).pathname).toBe('/')
+    expect(new URL(scope, servedAt).pathname).toBe('/')
+  })
+
+  it('keeps them prefix-relative when a reverse proxy mounts the client deeper', () => {
+    const { id, start_url, scope } = shipped()
+    const prefixed = 'http://127.0.0.1/orca/assets/web-app-manifest-Qq4w5.webmanifest'
+
+    expect(new URL(id, prefixed).pathname).toBe('/orca/')
+    expect(new URL(start_url, prefixed).pathname).toBe('/orca/')
+    expect(new URL(scope, prefixed).pathname).toBe('/orca/')
+  })
+
+  it('never points start_url at the assets directory', () => {
+    expect(new URL(shipped().start_url, servedAt).pathname).not.toBe('/assets/')
   })
 })
