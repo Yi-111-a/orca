@@ -1,6 +1,9 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:http'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { createStaticWebClientHandler } from '../../src/main/runtime/rpc/static-web-client-handler'
 import {
   createWebAppManifestIconsPlugin,
   resolveWebManifestIcons,
@@ -140,7 +143,7 @@ describe('the shipped manifest', () => {
     const { id, start_url, scope } = shipped()
 
     expect(new URL(id, servedAt).pathname).toBe('/')
-    expect(new URL(start_url, servedAt).pathname).toBe('/')
+    expect(new URL(start_url, servedAt).pathname).toBe('/web-index.html')
     expect(new URL(scope, servedAt).pathname).toBe('/')
   })
 
@@ -149,11 +152,44 @@ describe('the shipped manifest', () => {
     const prefixed = 'http://127.0.0.1/orca/assets/web-app-manifest-Qq4w5.webmanifest'
 
     expect(new URL(id, prefixed).pathname).toBe('/orca/')
-    expect(new URL(start_url, prefixed).pathname).toBe('/orca/')
+    expect(new URL(start_url, prefixed).pathname).toBe('/orca/web-index.html')
     expect(new URL(scope, prefixed).pathname).toBe('/orca/')
   })
 
   it('never points start_url at the assets directory', () => {
     expect(new URL(shipped().start_url, servedAt).pathname).not.toBe('/assets/')
   })
+
+  // Why: only /web-index.html is served, so a start_url that merely looks
+  // prefix-relative (../ -> /orca/) launches an installed app into a 404.
+  it.each([
+    ['', 'root'],
+    ['/orca', 'reverse-proxy prefix']
+  ])(
+    'serves the resolved start_url through the static handler at the %s mount (%s)',
+    async (mount) => {
+      const staticRoot = mkdtempSync(join(tmpdir(), 'web-app-manifest-start-url-'))
+      mkdirSync(join(staticRoot, 'assets'))
+      writeFileSync(join(staticRoot, 'web-index.html'), '<html>orca</html>')
+      const server = createServer(createStaticWebClientHandler(staticRoot))
+      await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
+      const address = server.address()
+      if (address === null || typeof address === 'string') {
+        throw new Error('static web handler did not bind a TCP port')
+      }
+      try {
+        const startUrl = new URL(
+          shipped().start_url,
+          `http://127.0.0.1:${address.port}${mount}/assets/web-app-manifest-Qq4w5.webmanifest`
+        )
+
+        const response = await fetch(startUrl)
+
+        expect(response.status).toBe(200)
+        await expect(response.text()).resolves.toBe('<html>orca</html>')
+      } finally {
+        await new Promise<void>((r) => server.close(() => r()))
+      }
+    }
+  )
 })
